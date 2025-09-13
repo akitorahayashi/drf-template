@@ -13,4 +13,4 @@ def health_check(request):  # noqa: ARG001
 @api_view(["GET"])
 def api_root(request):  # noqa: ARG001
     """Root API endpoint."""
-    return Response({"message": "Welcome to obs-agents-core API"})
+    return Response({"message": "Welcome to drf-template API"})

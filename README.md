@@ -1,6 +1,6 @@
-# Django Project Template
+## Overview
 
-This is a comprehensive Django project template designed to be a starting point for various web applications.
+A template for building REST APIs with Django.
 
 ## Prerequisites
 
@@ -83,5 +83,5 @@ A key feature of this template is how Django apps are organized.
 
 -   **`apps/` directory**: All Django applications reside within the `apps/` directory.
 -   **Namespace Package**: The `apps/` directory is configured as a [PEP 420 namespace package](https://www.python.org/dev/peps/pep-0420/), meaning it does **not** contain an `__init__.py` file. This allows for better separation of concerns and makes it easier to add or remove apps.
--   **Packaging**: The `pyproject.toml` file is configured to include the entire `apps` directory in the distribution.
+-   **Packaging**: The `pyproject.toml` file is configured to include the `apps` and `config` directories in the distribution.
 

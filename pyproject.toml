@@ -1,7 +1,7 @@
 [project]
-name = "obs-agents-core"
+name = "drf-template"
 version = "0.1.0"
-description = "Autonomous agents for Obsidian knowledge contents."
+description = "A template for building REST APIs with Django."
 authors = [{ name = "akitorahayashi", email = "atora.has75@gmail.com" }]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
@@ -32,8 +32,8 @@ dev = [
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-[tool.uv]
-package = false
+[tool.hatch.build.targets.wheel]
+packages = ["apps", "config"]
 
 [tool.black]
 target-version = ['py312']
