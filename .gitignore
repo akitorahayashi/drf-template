@@ -1,0 +1,48 @@
+# System Files
+.DS_Store
+Thumbs.db
+
+# Python
+db.sqlite3
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+.env
+.env.*
+# .env.exampleはバージョン管理に含める
+!.env.example
+.venv
+env/
+venv/
+
+# Package Distribution
+.eggs/
+*.egg-info/
+*.egg
+dist/
+build/
+wheels/
+*.manifest
+*.spec
+
+# Test & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# IDEs
+.idea/
+.vscode/
+.claude/
+
+# Logs
+*.log
+logs/
+
+# Ruff
+.ruff_cache

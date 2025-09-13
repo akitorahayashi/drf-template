@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+
+# Docker
+.dockerignore
+docker-compose.yml
+docker-compose.override.yml
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.so
+.Python
+.python-version
+pip-log.txt
+pip-delete-this-directory.txt
+.venv
+venv/
+env/
+pip-wheel-metadata
+
+# Environments
+.env
+.env.*
+!.env.example
+
+# Test & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# IDEs
+.idea/
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# Ruff
+.ruff_cache/
+
+# MacOS
+.DS_Store

@@ -1,0 +1,40 @@
+language: "ja"
+
+reviews:
+  high_level_summary: true
+  auto_review:
+    enabled: true
+
+chat:
+  auto_reply: true
+
+path_filters:
+  # 仮想環境
+  - "!**/venv/**"
+  - "!**/.venv/**"
+
+  # Django マイグレーション
+  - "!**/migrations/**"
+
+  # キャッシュ / ビルド
+  - "!**/__pycache__/**"
+  - "!**/.pytest_cache/**"
+  - "!**/.cache/**"
+
+  # 静的ファイル / メディア
+  - "!**/static/**"
+  - "!**/media/**"
+  - "!**/*.png"
+  - "!**/*.jpg"
+  - "!**/*.svg"
+  - "!**/*.css"
+  - "!**/*.js"
+
+  # 環境変数 / シークレット
+  - "!**/.env"
+
+  # フロントエンドビルド出力
+  - "!**/.next/**"
+  - "!**/dist/**"
+  - "!**/.nuxt/**"
+  - "!**/.webpack/**"
