@@ -184,7 +184,7 @@ unit-test: ## Run unit tests
 
 build-test: ## Build Docker image to verify build process
 	@echo "Building Docker image to verify build process..."
-	@$(DOCKER_CMD) build --no-cache --target dev-deps -t test-build:temp . || (echo "Docker build failed"; exit 1)
+	@$(DOCKER_CMD) build --no-cache --target production -t test-build:temp . || (echo "Docker build failed"; exit 1)
 	@echo "✅ Docker build successful"
 	@echo "Cleaning up test image..."
 	@$(DOCKER_CMD) rmi test-build:temp || true
