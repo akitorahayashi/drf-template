@@ -1,17 +1,11 @@
-"""
-End-to-end test configuration.
-
-Spins up the entire application stack using testcontainers.
-"""
-
 import os
+import subprocess
 import time
 from pathlib import Path
 
 import pytest
 import requests
 from dotenv import load_dotenv
-from testcontainers.compose import DockerCompose
 
 
 def _is_service_ready(url: str, expected_status: int = 200) -> bool:
@@ -36,29 +30,61 @@ def _wait_for_service(url: str, timeout: int = 120, interval: int = 5) -> None:
 
 
 @pytest.fixture(scope="session")
-def app_container() -> DockerCompose:
+def app_container():
     """
-    Provides a fully running application stack via Docker Compose.
+    Provides a fully running application stack via Docker Compose subprocess.
     """
     load_dotenv(".env")
     compose_files = [
-        "docker-compose.yml",
-        "docker-compose.override.yml",
+        "docker-compose.dev.yml",
+        "docker-compose.test.override.yml",
     ]
 
     # Find the project root by looking for a known file, e.g., pyproject.toml
     project_root = Path(__file__).parent.parent.parent
 
-    with DockerCompose(
-        context=str(project_root),
-        compose_file_name=compose_files,
-        build=True,
-    ) as compose:
+    # Build command
+    cmd = [
+        "docker",
+        "compose",
+        "-f",
+        compose_files[0],
+        "-f",
+        compose_files[1],
+        "up",
+        "--build",
+        "--wait",
+    ]
+
+    # Start the services
+    print(f"Starting Docker Compose with command: {' '.join(cmd)}")
+    process = subprocess.Popen(
+        cmd,
+        cwd=str(project_root),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        universal_newlines=True,
+    )
+
+    # Stream output in real-time
+    while True:
+        output = process.stdout.readline()
+        if output == "" and process.poll() is not None:
+            break
+        if output:
+            print(output.strip())
+
+    # Check if the process succeeded
+    if process.returncode != 0:
+        raise RuntimeError(
+            f"Docker Compose failed with return code {process.returncode}"
+        )
+
+    try:
         # Get the test port from environment variable
         host_port = os.getenv("TEST_PORT", "8002")
-        # Verify that api service is running
-        api_container = compose.get_container("api")
-        assert api_container is not None, "api container could not be found."
 
         # Construct the health check URL
         health_check_url = f"http://localhost:{host_port}/health/"
@@ -66,13 +92,31 @@ def app_container() -> DockerCompose:
         # Wait for the service to be healthy
         _wait_for_service(health_check_url, timeout=120, interval=5)
 
-        # Add the host port to the container object for access in other fixtures
-        compose.host_port = host_port
-        yield compose
+        # Create a simple object to hold the host port
+        class ComposeManager:
+            def __init__(self, host_port):
+                self.host_port = host_port
+
+        compose_manager = ComposeManager(host_port)
+        yield compose_manager
+
+    finally:
+        # Clean up - stop the services
+        cleanup_cmd = [
+            "docker",
+            "compose",
+            "-f",
+            compose_files[0],
+            "-f",
+            compose_files[1],
+            "down",
+        ]
+        print(f"Cleaning up with command: {' '.join(cleanup_cmd)}")
+        subprocess.run(cleanup_cmd, cwd=str(project_root), check=True)
 
 
 @pytest.fixture(scope="session")
-def page_url(app_container: DockerCompose) -> str:
+def page_url(app_container) -> str:
     """
     Returns the base URL of the running application.
     """

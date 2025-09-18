@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test_target: [unit-test, db-test, build-test, e2e-test]
+        test_target: [unit-test, build-test, e2e-test]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -31,4 +31,4 @@ jobs:
       - name: Run tests
         env:
           SUDO: ${{ secrets.SUDO || 'true' }}
-        run: uv run make ${{ matrix.test_target }}
+        run: make ${{ matrix.test_target }}

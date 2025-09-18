@@ -4,8 +4,8 @@
 
 # Docker
 .dockerignore
-docker-compose.yml
-docker-compose.override.yml
+docker-compose.dev.yml
+docker-compose.test.override.yml
 
 # Python
 __pycache__/

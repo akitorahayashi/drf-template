@@ -27,15 +27,16 @@ FROM base as dev-deps
 # - curl: used for debugging in the development container
 RUN apt-get update && apt-get install -y postgresql-client curl && rm -rf /var/lib/apt/lists/*
 
-# Install all dependencies, including development ones
-RUN --mount=type=cache,target=/root/.cache \
-    uv sync
-
 # Copy application code for testing
 COPY manage.py .
 COPY apps/ ./apps/
 COPY config/ ./config/
 COPY pyproject.toml .
+COPY uv.lock .
+
+# Install all dependencies, including development ones
+RUN --mount=type=cache,target=/root/.cache \
+    uv sync
 
 
 # ==============================================================================
@@ -67,7 +68,7 @@ WORKDIR /app
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
 
-# Install packages to both venv and system Python for reliability
+# Install packages to venv first, then to system Python as fallback
 RUN --mount=type=cache,target=/root/.cache \
     uv sync && \
     uv pip install --system django djangorestframework gunicorn psycopg2-binary python-dotenv dj-database-url django-cors-headers
