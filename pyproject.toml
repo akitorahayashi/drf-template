@@ -3,8 +3,8 @@ name = "drf-template"
 version = "0.1.0"
 description = "A template for building REST APIs with Django."
 authors = [{ name = "akitorahayashi", email = "atora.has75@gmail.com" }]
-readme = "README.md"
 requires-python = ">=3.12,<4.0"
+
 dependencies = [
     "django>=5.2.5,<6.0.0",
     "python-dotenv>=1.1.1,<2.0.0",

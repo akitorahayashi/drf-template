@@ -32,7 +32,6 @@ COPY manage.py .
 COPY apps/ ./apps/
 COPY config/ ./config/
 COPY pyproject.toml .
-COPY README.md .
 COPY uv.lock .
 
 # Install all dependencies, including development ones
@@ -69,7 +68,7 @@ WORKDIR /app
 # Copy dependency files
 COPY pyproject.toml uv.lock ./
 
-# Install packages to both venv and system Python for reliability
+# Install packages to venv first, then to system Python as fallback
 RUN --mount=type=cache,target=/root/.cache \
     uv sync && \
     uv pip install --system django djangorestframework gunicorn psycopg2-binary python-dotenv dj-database-url django-cors-headers

@@ -1,10 +1,3 @@
-"""
-Configuration for unit tests.
-
-Unit tests should be fast and isolated, testing individual components
-without external dependencies like databases or network calls.
-"""
-
 import pytest
 from dotenv import load_dotenv
 

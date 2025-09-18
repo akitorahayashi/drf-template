@@ -1,9 +1,3 @@
-"""
-Configuration for database tests.
-
-Database tests use testcontainers to provide isolated PostgreSQL instances.
-"""
-
 import os
 
 import psycopg2
@@ -19,9 +13,9 @@ def postgres_container():
     """
     load_dotenv(".env", override=True)
 
-    db_user = os.getenv("DB_USER", "django_user")
-    db_password = os.getenv("DB_PASSWORD", "django_password")
-    db_name = os.getenv("DB_NAME", "django_db_test")
+    db_user = os.getenv("POSTGRES_USER", "django_user")
+    db_password = os.getenv("POSTGRES_PASSWORD", "django_password")
+    db_name = os.getenv("POSTGRES_TEST_DB_NAME", "django_db_test")
 
     with PostgresContainer(
         "postgres:15-alpine", username=db_user, password=db_password, dbname=db_name
