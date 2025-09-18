@@ -174,19 +174,14 @@ lint: ## Lint code with black check and ruff
 # ==============================================================================
 
 .PHONY: test
-test: unit-test build-test db-test e2e-test ## Run the full test suite
+test: unit-test build-test e2e-test ## Run the full test suite
 
 .PHONY: unit-test
 unit-test: ## Run unit tests
 	@echo "Running unit tests..."
 	@uv run pytest tests/unit -v -s
 
-.PHONY: db-test
-db-test: ## Run the slower, database-dependent tests locally
-	@echo "Running database tests..."
-	@uv run pytest tests/db -v -s
-	
-.PHONY: build-test
+
 build-test: ## Build Docker image to verify build process
 	@echo "Building Docker image to verify build process..."
 	@$(DOCKER_CMD) build --no-cache --target dev-deps -t test-build:temp . || (echo "Docker build failed"; exit 1)

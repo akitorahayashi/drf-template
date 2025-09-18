@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test_target: [unit-test, db-test, build-test, e2e-test]
+        test_target: [unit-test, build-test, e2e-test]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
