@@ -27,15 +27,17 @@ FROM base as dev-deps
 # - curl: used for debugging in the development container
 RUN apt-get update && apt-get install -y postgresql-client curl && rm -rf /var/lib/apt/lists/*
 
-# Install all dependencies, including development ones
-RUN --mount=type=cache,target=/root/.cache \
-    uv sync
-
 # Copy application code for testing
 COPY manage.py .
 COPY apps/ ./apps/
 COPY config/ ./config/
 COPY pyproject.toml .
+COPY README.md .
+COPY uv.lock .
+
+# Install all dependencies, including development ones
+RUN --mount=type=cache,target=/root/.cache \
+    uv sync
 
 
 # ==============================================================================

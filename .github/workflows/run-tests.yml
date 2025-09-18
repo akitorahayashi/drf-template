@@ -31,4 +31,4 @@ jobs:
       - name: Run tests
         env:
           SUDO: ${{ secrets.SUDO || 'true' }}
-        run: uv run make ${{ matrix.test_target }}
+        run: make ${{ matrix.test_target }}

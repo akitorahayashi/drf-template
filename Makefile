@@ -39,9 +39,9 @@ TEST_PROJECT_NAME := $(PROJECT_NAME)-test
 # Docker Compose Commands
 # ==============================================================================
 
-DEV_COMPOSE := $(DOCKER_CMD) compose -f docker-compose.yml --project-name $(DEV_PROJECT_NAME)
-PROD_COMPOSE := $(DOCKER_CMD) compose -f docker-compose.yml --project-name $(PROD_PROJECT_NAME)
-TEST_COMPOSE := $(DOCKER_CMD) compose -f docker-compose.yml -f docker-compose.override.yml --project-name $(TEST_PROJECT_NAME)
+DEV_COMPOSE := $(DOCKER_CMD) compose -f docker-compose.dev.yml --project-name $(DEV_PROJECT_NAME)
+PROD_COMPOSE := $(DOCKER_CMD) compose -f docker-compose.dev.yml --project-name $(PROD_PROJECT_NAME)
+TEST_COMPOSE := $(DOCKER_CMD) compose -f docker-compose.dev.yml -f docker-compose.test.override.yml --project-name $(TEST_PROJECT_NAME)
 
 # ==============================================================================
 # HELP
@@ -160,14 +160,14 @@ superuser-prod: ## [PROD] Create a Django superuser in production-like environme
 .PHONY: format
 format: ## Format code with black and ruff --fix
 	@echo "Formatting code with black and ruff..."
-	black .
-	ruff check . --fix
+	uv run black .
+	uv run ruff check . --fix
 
 .PHONY: lint
 lint: ## Lint code with black check and ruff
 	@echo "Linting code with black check and ruff..."
-	black --check .
-	ruff check .
+	uv run black --check .
+	uv run ruff check .
 
 # ==============================================================================
 # TESTING
@@ -179,35 +179,25 @@ test: unit-test build-test db-test e2e-test ## Run the full test suite
 .PHONY: unit-test
 unit-test: ## Run unit tests
 	@echo "Running unit tests..."
-	@pytest tests/unit -v -s
+	@uv run pytest tests/unit -v -s
 
 .PHONY: db-test
 db-test: ## Run the slower, database-dependent tests locally
 	@echo "Running database tests..."
-	@python -m pytest tests/db -v -s
+	@uv run pytest tests/db -v -s
 	
 .PHONY: build-test
-build-test: ## Build Docker image and run smoke tests in clean environment
-	@echo "Building Docker image and running smoke tests..."
-	@$(DOCKER_CMD) build --target dev-deps -t test-build:temp . || (echo "Docker build failed"; exit 1)
-	@echo "Running smoke tests in Docker container..."
-	@$(DOCKER_CMD) run --rm \
-		--env-file .env \
-		-v $(CURDIR)/tests:/app/tests \
-		-v $(CURDIR)/api:/app/api \
-		-v $(CURDIR)/config:/app/config \
-		-v $(CURDIR)/manage.py:/app/manage.py \
-		-v $(CURDIR)/pyproject.toml:/app/pyproject.toml \
-		-e PATH="/app/.venv/bin:$$PATH" \
-		test-build:temp \
-		sh -c "/app/.venv/bin/python -m pytest tests/unit/" || (echo "Smoke tests failed"; exit 1)
+build-test: ## Build Docker image to verify build process
+	@echo "Building Docker image to verify build process..."
+	@$(DOCKER_CMD) build --no-cache --target dev-deps -t test-build:temp . || (echo "Docker build failed"; exit 1)
+	@echo "✅ Docker build successful"
 	@echo "Cleaning up test image..."
 	@$(DOCKER_CMD) rmi test-build:temp || true
 
 .PHONY: e2e-test
 e2e-test: ## Run end-to-end tests against a live application stack
 	@echo "Running end-to-end tests..."
-	@python -m pytest tests/e2e -v -s
+	@uv run pytest tests/e2e -v -s
 
 # ==============================================================================
 # CLEANUP
