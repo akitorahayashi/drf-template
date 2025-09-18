@@ -9,7 +9,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # docker-testが build, pstg, e2e を実行する
         test_target: [build-test, pstg-test, e2e-test]
     steps:
       - name: Checkout
@@ -20,6 +19,5 @@ jobs:
 
       - name: Run docker tests (USE_SQLITE=false)
         env:
-          SUDO: 'true' # CI環境でdockerコマンドにsudoを付与
-        # Makefileターゲットが USE_SQLITE=false を強制設定する
+          SUDO: 'true'
         run: make ${{ matrix.test_target }}

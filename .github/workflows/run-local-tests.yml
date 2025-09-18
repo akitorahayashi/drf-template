@@ -9,7 +9,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # local-testが unit-test と sqlt-test を実行する
         test_target: [unit-test, sqlt-test]
     steps:
       - name: Checkout
@@ -19,5 +18,4 @@ jobs:
         uses: ./.github/actions/setup-test-env
 
       - name: Run local tests (USE_SQLITE=true)
-        # このジョブでは USE_SQLITE=true (デフォルト) で実行される
         run: make ${{ matrix.test_target }}
