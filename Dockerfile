@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y postgresql-client curl && rm -rf /var/l
 COPY manage.py .
 COPY apps/ ./apps/
 COPY config/ ./config/
+COPY tests/ ./tests/
 COPY pyproject.toml .
 COPY uv.lock .
 
@@ -86,6 +87,7 @@ ENV PATH="/app/.venv/bin:${PATH}"
 COPY --chown=appuser:appgroup manage.py .
 COPY --chown=appuser:appgroup apps/ ./apps/
 COPY --chown=appuser:appgroup config/ ./config/
+COPY --chown=appuser:appgroup tests/ ./tests/
 COPY --chown=appuser:appgroup entrypoint.sh .
 
 # Change back to root to set permissions, then switch back

@@ -9,6 +9,7 @@ services:
       db:
         condition: service_healthy
     environment:
+      - USE_SQLITE=false
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DEV_DB_NAME}
     healthcheck:
       test: [ "CMD-SHELL", "python -c \"import os,sys,urllib.request; url=f'http://localhost:8000{os.getenv('HEALTHCHECK_PATH','/health/')}'; r=urllib.request.urlopen(url, timeout=5); sys.exit(0 if getattr(r,'status',200)==200 else 1)\"" ]

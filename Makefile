@@ -51,9 +51,9 @@ TEST_COMPOSE := $(DOCKER_CMD) compose -f docker-compose.dev.yml -f docker-compos
 help: ## Show this help message
 	@echo "Usage: make [target] [VAR=value]"
 	@echo "Options:"
-	@echo "  \033[36m%-15s\033[0m %s" "SUDO=true" "Run docker commands with sudo (e.g., make up SUDO=true)"
+	@printf "  \033[36m%-15s\033[0m %s\n" "SUDO=true" "Run docker commands with sudo (e.g., make up SUDO=true)"
 	@echo "Available targets:"
-	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # ==============================================================================
 # Environment Setup
@@ -114,45 +114,6 @@ rebuild: ## Rebuild services, pulling base images, without cache, and restart
 	@echo "Rebuilding all DEV services with --no-cache and --pull..."
 	@$(DEV_COMPOSE) up -d --build --no-cache --pull always
 
-.PHONY: logs
-logs: ## Show and follow dev container logs
-	@echo "Showing DEV logs..."
-	@$(DEV_COMPOSE) logs -f
-
-.PHONY: shell
-shell: ## Start a shell inside the dev 'api' container
-	@echo "Opening shell in dev api container..."
-	@$(DEV_COMPOSE) exec api /bin/bash || \
-		(echo "Failed to open shell. Is the container running? Try 'make up'" && exit 1)
-
-# ==============================================================================
-# Django Management Commands
-# ==============================================================================
-
-.PHONY: makemigrations
-makemigrations: ## [DEV] Create new migration files
-	@$(DEV_COMPOSE) exec api python manage.py makemigrations
-
-.PHONY: migrate
-migrate: ## [DEV] Run database migrations
-	@echo "Running DEV database migrations..."
-	@$(DEV_COMPOSE) exec api python manage.py migrate
-
-.PHONY: superuser
-superuser: ## [DEV] Create a Django superuser
-	@echo "Creating DEV superuser..."
-	@$(DEV_COMPOSE) exec api python manage.py createsuperuser
-
-.PHONY: migrate-prod
-migrate-prod: ## [PROD] Run database migrations in production-like environment
-	@echo "Running PROD-like database migrations..."
-	@$(PROD_COMPOSE) exec api python manage.py migrate
-
-.PHONY: superuser-prod
-superuser-prod: ## [PROD] Create a Django superuser in production-like environment
-	@echo "Creating PROD-like superuser..."
-	@$(PROD_COMPOSE) exec api python manage.py createsuperuser
-
 # ==============================================================================
 # CODE QUALITY 
 # ==============================================================================
@@ -174,24 +135,48 @@ lint: ## Lint code with black check and ruff
 # ==============================================================================
 
 .PHONY: test
-test: unit-test build-test e2e-test ## Run the full test suite
+test: local-test docker-test ## Run complete test suite (local SQLite then docker PostgreSQL)
+
+# --- Local testing (lightweight, fast development) ---
+.PHONY: local-test
+local-test: unit-test sqlt-test ## Run lightweight local test suite (unit + SQLite DB tests)
 
 .PHONY: unit-test
-unit-test: ## Run unit tests
-	@echo "Running unit tests..."
+unit-test: ## Run unit tests locally
+	@echo "🚀 Running unit tests (local)..."
 	@uv run pytest tests/unit -v -s
 
+.PHONY: sqlt-test
+sqlt-test: ## Run database tests with SQLite (fast, lightweight, no docker)
+	@echo "🚀 Running database tests with SQLite..."
+	@USE_SQLITE=true uv run pytest tests/db -v -s
 
-build-test: ## Build Docker image to verify build process
-	@echo "Building Docker image to verify build process..."
-	@$(DOCKER_CMD) build --no-cache --target production -t test-build:temp . || (echo "Docker build failed"; exit 1)
-	@echo "✅ Docker build successful"
-	@echo "Cleaning up test image..."
-	@$(DOCKER_CMD) rmi test-build:temp || true
+# --- Docker testing (production-like, comprehensive) ---
+.PHONY: docker-test
+docker-test: build-test pstg-test e2e-test ## Run all Docker-based tests
+
+.PHONY: build-test
+build-test: ## Build Docker image for testing without leaving artifacts
+	@echo "Building Docker image for testing (clean build)..."
+	@TEMP_IMAGE_TAG=$$(date +%s)-build-test; \
+	$(DOCKER_CMD) build --target production --tag temp-build-test:$$TEMP_IMAGE_TAG . && \
+	echo "Build successful. Cleaning up temporary image..." && \
+	$(DOCKER_CMD) rmi temp-build-test:$$TEMP_IMAGE_TAG || true
+
+.PHONY: pstg-test
+pstg-test: ## Run database tests with PostgreSQL (robust, production-like)
+	@echo "🚀 Starting TEST containers for PostgreSQL database test..."
+	@$(TEST_COMPOSE) up -d --build
+	@echo "Running database tests inside api container (against PostgreSQL)..."
+	@$(TEST_COMPOSE) exec api uv run pytest tests/db -v -s; \
+	EXIT_CODE=$$?; \
+	echo "🔴 Stopping TEST containers..."; \
+	$(TEST_COMPOSE) down --remove-orphans; \
+	exit $$EXIT_CODE
 
 .PHONY: e2e-test
-e2e-test: ## Run end-to-end tests against a live application stack
-	@echo "Running end-to-end tests..."
+e2e-test: ## Run e2e tests against containerized application stack (runs from host)
+	@echo "🚀 Running e2e tests (from host)..."
 	@uv run pytest tests/e2e -v -s
 
 # ==============================================================================
