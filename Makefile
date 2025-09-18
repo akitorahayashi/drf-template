@@ -28,7 +28,7 @@ DOCKER_CMD := $(SUDO_PREFIX) docker
 -include .env
 
 # Define the project name - try to read from .env file, fallback to directory name
-PROJECT_NAME ?= dj-site-tmpl
+PROJECT_NAME ?= drf-template
 
 # Define project names for different environments
 DEV_PROJECT_NAME := $(PROJECT_NAME)-dev
@@ -160,14 +160,14 @@ superuser-prod: ## [PROD] Create a Django superuser in production-like environme
 .PHONY: format
 format: ## Format code with black and ruff --fix
 	@echo "Formatting code with black and ruff..."
-	uv run black .
-	uv run ruff check . --fix
+	@uv run black .
+	@uv run ruff check . --fix
 
 .PHONY: lint
 lint: ## Lint code with black check and ruff
 	@echo "Linting code with black check and ruff..."
-	uv run black --check .
-	uv run ruff check .
+	@uv run black --check .
+	@uv run ruff check .
 
 # ==============================================================================
 # TESTING
