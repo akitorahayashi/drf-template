@@ -1,43 +1,24 @@
 # ==============================================================================
 # justfile for Django Project Automation
-#
-# Provides a unified interface for common development tasks, abstracting away
-# the underlying Docker Compose commands for a better Developer Experience (DX).
 # ==============================================================================
 
-# --- 変数定義 ---
-
-# .env ファイルから変数をロード (justが自動的に実行)
-# デフォルトのプロジェクト名を設定 (.envで上書き可能)
 PROJECT_NAME := env("PROJECT_NAME", "drf-template")
 
-# 環境ごとのプロジェクト名
 DEV_PROJECT_NAME := PROJECT_NAME + "-dev"
 PROD_PROJECT_NAME := PROJECT_NAME + "-prod"
 TEST_PROJECT_NAME := PROJECT_NAME + "-test"
 
-# Sudo設定
-# 実行方法:
-#   just up
-#   just --set SUDO true up
-#   SUDO=true just up
-SUDO := default("false")
-DOCKER_CMD := if SUDO == "true" { "sudo docker" } else { "docker" }
+DEV_COMPOSE  := "docker compose -f docker-compose.dev.yml --project-name " + DEV_PROJECT_NAME
+PROD_COMPOSE := "docker compose -f docker-compose.dev.yml --project-name " + PROD_PROJECT_NAME
+TEST_COMPOSE := "docker compose -f docker-compose.dev.yml -f docker-compose.test.override.yml --project-name " + TEST_PROJECT_NAME
 
-# --- Docker Compose コマンド定義 ---
-DEV_COMPOSE  := DOCKER_CMD + " compose -f docker-compose.dev.yml --project-name " + DEV_PROJECT_NAME
-PROD_COMPOSE := DOCKER_CMD + " compose -f docker-compose.dev.yml --project-name " + PROD_PROJECT_NAME
-TEST_COMPOSE := DOCKER_CMD + " compose -f docker-compose.dev.yml -f docker-compose.test.override.yml --project-name " + TEST_PROJECT_NAME
+# Show available recipes
+help:
+  @echo "Usage: just [recipe]"
+  @echo "Available recipes:"
+  @just --list | tail -n +2 | awk '{printf "  \033[36m%-20s\033[0m %s\n", $1, substr($0, index($0, $2))}'
 
-
-# ==============================================================================
-# HELP (デフォルトターゲット)
-# ==============================================================================
-
-# Show this help message
-default:
-    @just --list
-
+default: help
 
 # ==============================================================================
 # Environment Setup
@@ -60,16 +41,14 @@ default:
     @echo "   📝 Adjust other settings as needed"
     @echo ""
     @echo "Pulling PostgreSQL image for development..."
-    # justfileはレシピ全体を1つのシェルで実行するため、`\`での行連結は不要
     POSTGRES_IMAGE="postgres:16-alpine"
     if [ -f .env ] && grep -q "^POSTGRES_IMAGE=" .env; then
         POSTGRES_IMAGE=$$(sed -n 's/^POSTGRES_IMAGE=\(.*\)/\1/p' .env | head -n1 | tr -d '\r')
         [ -z "$$POSTGRES_IMAGE" ] && POSTGRES_IMAGE="postgres:16-alpine"
     fi
     echo "Using POSTGRES_IMAGE=$$POSTGRES_IMAGE"
-    {{DOCKER_CMD}} pull "$$POSTGRES_IMAGE"
+    docker pull "$$POSTGRES_IMAGE"
     @echo "✅ Setup complete. Dependencies are installed and .env file is ready."
-
 
 # ==============================================================================
 # Development Environment Commands
@@ -100,7 +79,6 @@ default:
     @echo "Rebuilding all DEV services with --no-cache and --pull..."
     @{{DEV_COMPOSE}} up -d --build --no-cache --pull always
 
-
 # ==============================================================================
 # CODE QUALITY
 # ==============================================================================
@@ -117,15 +95,12 @@ default:
     @uv run black --check .
     @uv run ruff check .
 
-
 # ==============================================================================
 # TESTING
 # ==============================================================================
 
 # Run complete test suite (local SQLite then docker PostgreSQL)
 @test: local-test docker-test
-
-# --- Local testing (lightweight, fast development) ---
 
 # Run lightweight local test suite (unit + SQLite DB tests)
 @local-test: unit-test sqlt-test
@@ -140,8 +115,6 @@ default:
     @echo "🚀 Running database tests with SQLite..."
     @USE_SQLITE=true uv run pytest tests/db -v -s
 
-# --- Docker testing (production-like, comprehensive) ---
-
 # Run all Docker-based tests
 @docker-test: build-test pstg-test e2e-test
 
@@ -149,32 +122,27 @@ default:
 @build-test:
     @echo "Building Docker image for testing (clean build)..."
     TEMP_IMAGE_TAG=$$(date +%s)-build-test
-    {{DOCKER_CMD}} build --target production --tag temp-build-test:$$TEMP_IMAGE_TAG . && \
+    docker build --target production --tag temp-build-test:$$TEMP_IMAGE_TAG . && \
     echo "Build successful. Cleaning up temporary image..." && \
-    {{DOCKER_CMD}} rmi temp-build-test:$$TEMP_IMAGE_TAG || true
+    docker rmi temp-build-test:$$TEMP_IMAGE_TAG || true
 
 # Run database tests with PostgreSQL (robust, production-like)
 @pstg-test:
     @echo "🚀 Starting TEST containers for PostgreSQL database test..."
     @{{TEST_COMPOSE}} up -d --build
     @echo "Running database tests inside api container (against PostgreSQL)..."
-    
-    # justはデフォルトで `set -e` のように動作するため、
-    # テストが失敗しても `down` を実行するために `set +e` を使う
     @set +e
-    {{TEST_COMPOSE}} exec api uv run pytest tests/db -v -s
-    EXIT_CODE=$$? # テストの終了コードを取得
+    {{TEST_COMPOSE}} exec api pytest tests/db -v -s
+    EXIT_CODE=$$?
     @set -e
-    
     @echo "🔴 Stopping TEST containers..."
     @{{TEST_COMPOSE}} down --remove-orphans
-    @exit $$EXIT_CODE # テストの終了コードでjustプロセスを終了させる
+    @exit $$EXIT_CODE
 
 # Run e2e tests against containerized application stack (runs from host)
 @e2e-test:
     @echo "🚀 Running e2e tests (from host)..."
     @uv run pytest tests/e2e -v -s
-
 
 # ==============================================================================
 # CLEANUP
