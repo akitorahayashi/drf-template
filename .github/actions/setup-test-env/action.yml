@@ -13,7 +13,7 @@ runs:
       uses: astral-sh/setup-uv@v4
 
     - name: Install dependencies
-      run: uv sync
+      run: uv sync --frozen
       shell: bash
 
     - name: Install just
