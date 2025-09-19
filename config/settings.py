@@ -67,11 +67,29 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": dj_database_url.config(
-        conn_max_age=int(os.getenv("DATABASE_CONN_MAX_AGE", 0)),
-    )
-}
+# Dynamic database backend switching based on USE_SQLITE environment variable
+USE_SQLITE = os.getenv("USE_SQLITE", "true").lower() == "true"
+
+if USE_SQLITE:
+    # SQLite configuration for local/test environments
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "test_db.sqlite3",
+        }
+    }
+else:
+    # PostgreSQL configuration for production/docker environments
+    DATABASE_URL = os.getenv("DATABASE_URL")
+    if not DATABASE_URL:
+        raise RuntimeError("USE_SQLITE=false requires DATABASE_URL to be set.")
+
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=int(os.getenv("DATABASE_CONN_MAX_AGE", 0)),
+        )
+    }
 
 
 # Password validation
