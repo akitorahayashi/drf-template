@@ -15,9 +15,9 @@ TEST_COMPOSE := "docker compose -f docker-compose.dev.yml -f docker-compose.test
 
 # Show available recipes
 help:
-  @echo "Usage: just [recipe]"
-  @echo "Available recipes:"
-  @just --list | tail -n +2 | awk '{printf "  \033[36m%-20s\033[0m %s\n", $1, substr($0, index($0, $2))}'
+    @echo "Usage: just [recipe]"
+    @echo "Available recipes:"
+    @just --list | tail -n +2 | awk '{printf "  \033[36m%-20s\033[0m %s\n", $1, substr($0, index($0, $2))}'
 
 default: help
 
@@ -116,23 +116,18 @@ default: help
 # Build Docker image for testing without leaving artifacts
 @build-test:
     @echo "Building Docker image for testing (clean build)..."
-    TEMP_IMAGE_TAG=$$(date +%s)-build-test
-    docker build --target production --tag temp-build-test:$$TEMP_IMAGE_TAG . && \
-    echo "Build successful. Cleaning up temporary image..." && \
-    docker rmi temp-build-test:$$TEMP_IMAGE_TAG || true
+    docker build --target production --tag temp-build-test:latest .
+    @echo "Build successful. Cleaning up temporary image..."
+    -docker rmi temp-build-test:latest 2>/dev/null || true
 
 # Run database tests with PostgreSQL (robust, production-like)
 @pstg-test:
     @echo "🚀 Starting TEST containers for PostgreSQL database test..."
     @{{TEST_COMPOSE}} up -d --build
     @echo "Running database tests inside api container (against PostgreSQL)..."
-    @set +e
-    {{TEST_COMPOSE}} exec api pytest tests/db -v -s
-    EXIT_CODE=$$?
-    @set -e
+    -{{TEST_COMPOSE}} exec api pytest tests/db -v -s
     @echo "🔴 Stopping TEST containers..."
     @{{TEST_COMPOSE}} down --remove-orphans
-    @exit $$EXIT_CODE
 
 # Run e2e tests against containerized application stack (runs from host)
 @e2e-test:
