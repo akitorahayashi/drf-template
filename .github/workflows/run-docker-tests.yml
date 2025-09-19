@@ -17,7 +17,5 @@ jobs:
       - name: Setup test environment
         uses: ./.github/actions/setup-test-env
 
-      - name: Run docker tests (USE_SQLITE=false)
-        env:
-          SUDO: 'true'
+      - name: Run docker tests
         run: make ${{ matrix.test_target }}
