@@ -18,4 +18,4 @@ jobs:
         uses: ./.github/actions/setup-test-env
 
       - name: Run local tests (USE_SQLITE=true)
-        run: make ${{ matrix.test_target }}
+        run: just ${{ matrix.test_target }}

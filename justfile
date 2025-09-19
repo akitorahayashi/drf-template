@@ -29,12 +29,12 @@ default: help
     @echo "Installing python dependencies with uv..."
     @uv sync
     @echo "Creating environment file..."
-    @if [ ! -f .env ] && [ -f .env.example ]; then
-        echo "Creating .env from .env.example..."
-        cp .env.example .env
-        echo "✅ Environment file created (.env)"
-    else
-        echo ".env already exists. Skipping creation."
+    @if [ ! -f .env ] && [ -f .env.example ]; then \
+        echo "Creating .env from .env.example..."; \
+        cp .env.example .env; \
+        echo "✅ Environment file created (.env)"; \
+    else \
+        echo ".env already exists. Skipping creation."; \
     fi
     @echo "💡 You can customize .env for your specific needs:"
     @echo "   📝 Change database settings if needed"

@@ -18,4 +18,4 @@ jobs:
         uses: ./.github/actions/setup-test-env
 
       - name: Run docker tests
-        run: make ${{ matrix.test_target }}
+        run: just ${{ matrix.test_target }}
