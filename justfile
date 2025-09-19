@@ -3,6 +3,7 @@
 # ==============================================================================
 
 PROJECT_NAME := env("PROJECT_NAME", "drf-template")
+POSTGRES_IMAGE := env("POSTGRES_IMAGE", "postgres:16-alpine")
 
 DEV_PROJECT_NAME := PROJECT_NAME + "-dev"
 PROD_PROJECT_NAME := PROJECT_NAME + "-prod"
@@ -41,13 +42,7 @@ default: help
     @echo "   📝 Adjust other settings as needed"
     @echo ""
     @echo "Pulling PostgreSQL image for development..."
-    POSTGRES_IMAGE="postgres:16-alpine"
-    if [ -f .env ] && grep -q "^POSTGRES_IMAGE=" .env; then
-        POSTGRES_IMAGE=$$(sed -n 's/^POSTGRES_IMAGE=\(.*\)/\1/p' .env | head -n1 | tr -d '\r')
-        [ -z "$$POSTGRES_IMAGE" ] && POSTGRES_IMAGE="postgres:16-alpine"
-    fi
-    echo "Using POSTGRES_IMAGE=$$POSTGRES_IMAGE"
-    docker pull "$$POSTGRES_IMAGE"
+    docker pull {{POSTGRES_IMAGE}}
     @echo "✅ Setup complete. Dependencies are installed and .env file is ready."
 
 # ==============================================================================
