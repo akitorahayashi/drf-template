@@ -2,7 +2,9 @@
 # justfile for Django Project Automation
 # ==============================================================================
 
-PROJECT_NAME := env("PROJECT_NAME", "drf-template")
+set dotenv-load
+
+PROJECT_NAME := env("PROJECT_NAME", "fastapi-tmpl")
 POSTGRES_IMAGE := env("POSTGRES_IMAGE", "postgres:16-alpine")
 
 DEV_PROJECT_NAME := PROJECT_NAME + "-dev"
@@ -26,7 +28,7 @@ default: help
 # ==============================================================================
 
 # Initialize project: install dependencies, create .env file and pull required Docker images
-@setup:
+setup:
     @echo "Installing python dependencies with uv..."
     @uv sync
     @echo "Creating environment file..."
@@ -42,7 +44,7 @@ default: help
     @echo "   📝 Adjust other settings as needed"
     @echo ""
     @echo "Pulling PostgreSQL image for development..."
-    docker pull {{POSTGRES_IMAGE}}
+    @docker pull {{POSTGRES_IMAGE}}
     @echo "✅ Setup complete. Dependencies are installed and .env file is ready."
 
 # ==============================================================================
@@ -50,27 +52,27 @@ default: help
 # ==============================================================================
 
 # Build images and start dev containers
-@up:
+up:
     @echo "Building images and starting DEV containers..."
     @{{DEV_COMPOSE}} up --build -d
 
 # Stop dev containers
-@down:
+down:
     @echo "Stopping DEV containers..."
     @{{DEV_COMPOSE}} down --remove-orphans
 
 # Build images and start prod-like containers
-@up-prod:
+up-prod:
     @echo "Starting up PROD-like containers..."
     @{{PROD_COMPOSE}} up -d --build
 
 # Stop prod-like containers
-@down-prod:
+down-prod:
     @echo "Shutting down PROD-like containers..."
     @{{PROD_COMPOSE}} down --remove-orphans
 
 # Rebuild services, pulling base images, without cache, and restart
-@rebuild:
+rebuild:
     @echo "Rebuilding all DEV services with --no-cache and --pull..."
     @{{DEV_COMPOSE}} up -d --build --no-cache --pull always
 
@@ -79,13 +81,13 @@ default: help
 # ==============================================================================
 
 # Format code with black and ruff --fix
-@format:
+format:
     @echo "Formatting code with black and ruff..."
     @uv run black .
     @uv run ruff check . --fix
 
 # Lint code with black check and ruff
-@lint:
+lint:
     @echo "Linting code with black check and ruff..."
     @uv run black --check .
     @uv run ruff check .
@@ -95,33 +97,33 @@ default: help
 # ==============================================================================
 
 # Run complete test suite (local SQLite then docker PostgreSQL)
-@test: local-test docker-test
+test: local-test docker-test
 
 # Run lightweight local test suite (unit + SQLite DB tests)
-@local-test: unit-test sqlt-test
+local-test: unit-test sqlt-test
 
 # Run unit tests locally
-@unit-test:
+unit-test:
     @echo "🚀 Running unit tests (local)..."
     @uv run pytest tests/unit -v -s
 
 # Run database tests with SQLite (fast, lightweight, no docker)
-@sqlt-test:
+sqlt-test:
     @echo "🚀 Running database tests with SQLite..."
     @USE_SQLITE=true uv run pytest tests/db -v -s
 
 # Run all Docker-based tests
-@docker-test: build-test pstg-test e2e-test
+docker-test: build-test pstg-test e2e-test
 
 # Build Docker image for testing without leaving artifacts
-@build-test:
+build-test:
     @echo "Building Docker image for testing (clean build)..."
     docker build --target production --tag temp-build-test:latest .
     @echo "Build successful. Cleaning up temporary image..."
     -docker rmi temp-build-test:latest 2>/dev/null || true
 
 # Run database tests with PostgreSQL (robust, production-like)
-@pstg-test:
+pstg-test:
     @echo "🚀 Starting TEST containers for PostgreSQL database test..."
     @{{TEST_COMPOSE}} up -d --build
     @echo "Running database tests inside api container (against PostgreSQL)..."
@@ -130,7 +132,7 @@ default: help
     @{{TEST_COMPOSE}} down --remove-orphans
 
 # Run e2e tests against containerized application stack (runs from host)
-@e2e-test:
+e2e-test:
     @echo "🚀 Running e2e tests (from host)..."
     @uv run pytest tests/e2e -v -s
 
@@ -139,7 +141,7 @@ default: help
 # ==============================================================================
 
 # Remove __pycache__ and .venv to make project lightweight
-@clean:
+clean:
     @echo "🧹 Cleaning up project..."
     @find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
     @rm -rf .venv
